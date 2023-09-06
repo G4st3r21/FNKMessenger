@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Подключение Bootstrap CSS -->
+    <link rel="stylesheet" href="/file/download">
+
+    <!-- Подключение пользовательского CSS -->
+    <style>
+        /* Добавьте здесь свои пользовательские стили */
+        .chat-container {
+            margin: auto;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .message-list {
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        .input-group-addon {
+            cursor: pointer;
+        }
+
+    </style>
+
+    <title>Простой чат</title>
+</head>
+
+<body>
+<div class="container chat-container mt-5">
+    <h3>Посвят-Чат</h3>
+
+    <!-- Поле вывода сообщений -->
+    <div class="message-list border rounded p-2 my-3"></div>
+
+    <!-- Поле ввода имени -->
+    <div class="input-group mb-3">
+        <div class="input-group-prepend">
+            <span class="input-group-text">Имя:</span>
+        </div>
+        <input type="text" id="name-input" class="form-control"/>
+    </div>
+
+    <!-- Поле ввода текста сообщения -->
+    <div class="mb-3 input-group-append ">
+        <input type="text" id="message-input" class="form-control" placeholder="Введите сообщение..."/>
+        <button id="send-btn" class="btn btn-primary">Отправить</button>
+    </div>
+
+</div>
+
+<!-- Подключение Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<!-- Вставьте здесь JavaScript код для отправки сообщений и вывода в поле сообщений -->
+
+<script>
+    // Пример JavaScript кода для отправки сообщения и его отображения
+
+    const messageList = document.querySelector('.message-list');
+    const sendButton = document.getElementById('send-btn');
+    const nameInput = document.getElementById('name-input');
+    const messageInput = document.getElementById('message-input');
+
+    // Функция добавления нового сообщения
+    function addMessage(name, text) {
+        const newMessageElement = document.createElement('p');
+        newMessageElement.innerHTML =
+            `<strong>${name}</strong>: ${text}`;
+        messageList.appendChild(newMessageElement);
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    // Обработчик события клика по кнопке "Отправить"
+    sendButton.addEventListener('click', () => {
+        const nameValue = nameInput.value.trim();
+        const messageValue = messageInput.value.trim();
+
+        if (nameValue && messageValue) {
+            // Создаем объект с данными для отправки
+            const data = {
+                username: nameValue,
+                text: messageValue
+            };
+
+            // Опции для fetch запроса
+            const options = {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            };
+
+            fetch('/send_message', options)
+                .then(response => response.json())
+                .then(data => {
+                    // Обработка ответа от сервера (если необходимо)
+                    console.log(data);
+                })
+                .catch(error => console.error(error));
+
+            // Сброс значений полей после отправки
+            messageInput.value = '';
+        }
+    });
+
+    // Переменная для хранения уже выведенных сообщений
+    let displayedMessages = [];
+
+    // Функция для выполнения запроса к серверу и обработки ответа
+    function fetchMessages() {
+        fetch('/data_stream')
+            .then(response => response.json())
+            .then(data => {
+                const messages = data.messages;
+
+                // Фильтрация новых сообщений по id
+                const newMessages = messages.filter(message => !displayedMessages.includes(message.id));
+
+                // Вывод новых сообщений на странице
+                newMessages.forEach(message => {
+                    displayedMessages.push(message.id);
+                    console.log(`Username: ${message.username}, Text: ${message.text}`);
+                    addMessage(message.username, message.text)
+                });
+            })
+            .catch(error => console.error('Ошибка при выполнении запроса:', error));
+    }
+
+    // Выполнение запросов раз в секунду (1000 миллисекунд)
+    setInterval(fetchMessages, 1000);
+
+</script>
+
+</body>
+</html>
